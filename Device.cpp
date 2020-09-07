@@ -22,10 +22,10 @@ ID3D11Device* Device;
 ID3D11DeviceContext* DeviceContext;
 ID3D11RenderTargetView* RTV;
 
-ID3D11VertexShader* VertexShader;
-ID3D11PixelShader* PixelShader;
-ID3D10Blob* VsBlob;
-ID3D10Blob* PsBlob;
+//ID3D11VertexShader* VertexShader;
+//ID3D11PixelShader* PixelShader;
+//ID3D10Blob* VsBlob;
+//ID3D10Blob* PsBlob;
 
 Keyboard* Key;
 
@@ -68,6 +68,18 @@ void InitWindow(HINSTANCE hInstance, int ShowWnd)
 		);
 		assert(Hwnd != NULL);
 	}
+
+	RECT rect = { 0, 0, (LONG)Width, (LONG)Height };
+	UINT centerX = (GetSystemMetrics(SM_CXSCREEN) - (UINT)Width) / 2;
+	UINT centerY = (GetSystemMetrics(SM_CYSCREEN) - (UINT)Height) / 2;
+
+	AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
+	MoveWindow(
+		Hwnd,
+		centerX, centerY,
+		rect.right - rect.left, rect.bottom - rect.top,
+		TRUE
+	);
 
 	ShowWindow(Hwnd, ShowWnd);
 	UpdateWindow(Hwnd);
@@ -124,28 +136,6 @@ void InitDirect3D(HINSTANCE hInstance)
 		DeviceContext->OMSetRenderTargets(1, &RTV, NULL);
 	}
 
-	//Create Shader
-	{
-		HRESULT hr;
-
-		hr = D3DX11CompileFromFile(L"Effect.hlsl", 0, 0, "VS", "vs_5_0", 0, 0, 0, &VsBlob, 0, 0);
-		assert(SUCCEEDED(hr));
-
-		hr = D3DX11CompileFromFile(L"Effect.hlsl", 0, 0, "PS", "ps_5_0", 0, 0, 0, &PsBlob, 0, 0);
-		assert(SUCCEEDED(hr));
-
-
-		hr = Device->CreateVertexShader(VsBlob->GetBufferPointer(), VsBlob->GetBufferSize(), NULL, &VertexShader);
-		assert(SUCCEEDED(hr));
-
-		hr = Device->CreatePixelShader(PsBlob->GetBufferPointer(), PsBlob->GetBufferSize(), NULL, &PixelShader);
-		assert(SUCCEEDED(hr));
-
-
-		DeviceContext->VSSetShader(VertexShader, 0, 0);
-		DeviceContext->PSSetShader(PixelShader, 0, 0);
-	}
-
 	//Create Viewport
 	{
 		D3D11_VIEWPORT viewport = { 0 };
@@ -161,11 +151,6 @@ void InitDirect3D(HINSTANCE hInstance)
 
 void Destroy()
 {
-	VertexShader->Release();
-	PixelShader->Release();
-	VsBlob->Release();
-	PsBlob->Release();
-
 	SwapChain->Release();
 	Device->Release();
 	DeviceContext->Release();
@@ -176,6 +161,9 @@ WPARAM Running()
 {
 	MSG msg;
 	ZeroMemory(&msg, sizeof(MSG));
+
+	ImGui::Create(Hwnd, Device, DeviceContext);
+	ImGui::StyleColorsDark();
 
 	Key = new Keyboard();
 
@@ -193,18 +181,23 @@ WPARAM Running()
 		else 
 		{
 			Update();
+			ImGui::Update();
 			Render();
 		}
 	}
 	DestroyScene();
 
 	delete Key;
+	ImGui::Delete();
 
 	return msg.wParam;
 }
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	if (ImGui::WndProc((UINT*)hwnd, msg, wParam, lParam))
+		return true;
+	
 	switch (msg)
 	{
 		case WM_KEYDOWN:
