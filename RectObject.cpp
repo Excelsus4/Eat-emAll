@@ -9,14 +9,7 @@ RectObject::RectObject(D3DXVECTOR3 p, float s, D3DXVECTOR3 c, Vertex* v) :
 }
 
 RectObject::RectObject(Vertex* v):
-	vertices(v), alive(true)
-{
-	uniform_real_distribution<float> colorDice(0, 1);
-	uniform_real_distribution<float> sizeDice(0.01f, 0.1f);
-	uniform_real_distribution<float> posDice(-0.9f, 0.9f);
-	pos = D3DXVECTOR3(posDice(*Random::gen), posDice(*Random::gen), 0);
-	size = sizeDice(*Random::gen);
-	color = D3DXVECTOR3(colorDice(*Random::gen), colorDice(*Random::gen), colorDice(*Random::gen));
+	vertices(v), alive(false){
 }
 
 RectObject::~RectObject()
@@ -79,5 +72,19 @@ void RectObject::DisableVertex()
 {
 	size = 0;
 	alive = false;
+	SetVertex();
+}
+
+void RectObject::Randomize()
+{
+	uniform_real_distribution<float> colorDice(0, 1);
+	uniform_real_distribution<float> sizeDice(10.0f, 40.0f);
+	uniform_real_distribution<float> XposDice(0, Width);
+	uniform_real_distribution<float> YposDice(0, Height);
+	pos = D3DXVECTOR3(XposDice(*Random::gen), YposDice(*Random::gen), 0);
+	size = sizeDice(*Random::gen);
+	color = D3DXVECTOR3(colorDice(*Random::gen), colorDice(*Random::gen), colorDice(*Random::gen));
+
+	alive = true;
 	SetVertex();
 }

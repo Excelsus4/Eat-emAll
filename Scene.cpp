@@ -9,11 +9,11 @@ Shader* shader;
 
 ID3D11Buffer* vertexBuffer;
 
-const int VNUM = 1;
+const int VNUM = 32;
 const int VSIZE = 6;
 Vertex vertices[VNUM*VSIZE];
 RectObject player = RectObject(D3DXVECTOR3(50.0f, 50.0f, 0), 25.0f, D3DXVECTOR3(1, 1, 1), vertices);
-float speed = 0.4f;
+float speed = 0.25f;
 vector<RectObject*> foodVector;
 vector<RectObject*> foodPool;
 
@@ -26,9 +26,9 @@ void InitScene() {
 	Random::gen = new mt19937(rd());
 
 	player.SetVertex();
-	//for (int idx = 1; idx < VNUM; idx++) {
-	//	foodVector.push_back(new RectObject(&vertices[idx * VSIZE]));
-	//}
+	for (int idx = 1; idx < VNUM; idx++) {
+		foodPool.push_back(new RectObject(&vertices[idx * VSIZE]));
+	}
 	//for (auto a : foodVector) {
 	//	a->SetVertex();
 	//}
@@ -49,6 +49,9 @@ void InitScene() {
 }
 
 void DestroyScene() {
+	for (auto p : foodPool) {
+		delete p;
+	}
 	for (auto a : foodVector) {
 		delete a;
 	}
@@ -89,11 +92,20 @@ void Update() {
 		player.Translate(D3DXVECTOR3(0, -speed, 0));
 
 	//Check Collision
-	for (auto a : foodVector) {
-		if (player.CollisionCheck(*a)) {
-			player.Consume(*a);
-			a->DisableVertex();
+	auto it = foodVector.begin();
+	while (it != foodVector.end()) {
+		if (player.CollisionCheck(**it)) {
+			player.Consume(**it);
+			(*it)->DisableVertex();
+			foodPool.push_back(*it);
+			it = foodVector.erase(it);
 		}
+		else {
+			++it;
+		}
+	}
+
+	for (auto a : foodVector) {
 	}
 	//always
 	player.SetVertex();
@@ -108,7 +120,12 @@ void Render() {
 	{
 		//ImGUI
 		if (ImGui::Button("Create")) {
-
+			if (foodPool.size() > 0) {
+				auto t = foodPool.begin();
+				foodVector.push_back(*t);
+				(*t)->Randomize();
+				foodPool.erase(t);
+			}
 		}
 
 		UINT stride = sizeof(Vertex);

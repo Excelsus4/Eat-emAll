@@ -16,6 +16,8 @@ public:
 	void Translate(const D3DXVECTOR3 vector);
 	void DisableVertex();
 	bool isAlive() const { return alive; };
+
+	void Randomize();
 private:
 	D3DXVECTOR3 pos;
 	float size;
